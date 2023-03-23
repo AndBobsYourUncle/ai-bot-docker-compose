@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  openai:
+    image: andbobsyouruncle/smarthome-ai-bot
+    restart: always
+    networks:
+      - aibotnet
+    environment:
+      OPENAI_API_KEY: "KEY_FROM_OPENAI"
+      USER_SHORT_NAME: "Your Name"
+      SPEECH_ENDPOINT: ENDPOINT_FOR_SPEECH # does HTTP post to this with "response" key in JSON
+      HOME_ASSISTANT_API_HOST: http://LOCAL_HOME_ASSISTANT_IP:8123
+      HOME_ASSISTANT_BEARER_TOKEN: HOME_ASSISTANT_BEARER_TOKEN
+  speaker:
+    image: andbobsyouruncle/vlc-telnet-docker
+    restart: always
+    network_mode: "host"
+    environment:
+      SOUND_CARD_NUMBER: 2 # should be the card number from `aplay -l`
+      TELNET_PASSWORD: SOME_PASSWORD_FOR_TELNET_HOST
+    devices:
+      - /dev/snd:/dev/snd
+  transcribe:
+    image: andbobsyouruncle/speech_commands
+    restart: always
+    networks:
+      - aibotnet
+    environment:
+      CAPTURE_DEVICE_ID: 2 # should be the card number from `aplay -l`
+      PROMPT_DURATION: 200
+      COMMAND_DURATION: 8000
+      PROMPT: "Hey Jarvis"
+      THREADS: 10
+      GET_ENDPOINT: http://openai:8080/get_prompt_response?prompt=
+    devices:
+      - /dev/snd:/dev/snd
+
+networks:
+    aibotnet:
